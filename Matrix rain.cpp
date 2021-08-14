@@ -13,8 +13,10 @@
 #include <io.h>
 
 
-#define TAIL_LENGTH 20
+#define TAIL_LENGTH 10
 #define DELAY 1
+
+//TODO: Make tail proportional to console size
 int tail = TAIL_LENGTH;
 
 using namespace std;
@@ -50,7 +52,8 @@ bool GetConsoleSize(COORD& cord)
 	CONSOLE_SCREEN_BUFFER_INFO p;
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (GetConsoleScreenBufferInfo(console, &p)) {
-		cord = p.dwSize;
+		cord.X = p.srWindow.Right;
+		cord.Y = p.srWindow.Bottom;
 		return true;
 	}
 	return false;
@@ -134,10 +137,10 @@ char RandomChar(){
 }
 void matrix(int brK, int brV){
 	int j = 0;
-	vector<int> vrste;
+	vector<int> vrste; //Predstavlja trenutnu vrednost vrste u datoj koloni, tj y poziciju u datoj x vrednosti
 
 	for (int i = 0; i < brK; i++)
-		vrste.push_back(rand() % brV - 10);
+		vrste.push_back(rand() % brV);
 
 	while (1){
 		Sleep(DELAY);
