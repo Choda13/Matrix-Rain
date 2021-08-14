@@ -169,7 +169,7 @@ void matrixV2(int brK, int brV){
 	vector<int> kolone;
 
 	for (int i = 0; i < brK; i++)
-		kolone.push_back(rand() % brV - 10);
+		kolone.push_back(rand() % brV);
 
 	while (1){
 		Sleep(DELAY);
