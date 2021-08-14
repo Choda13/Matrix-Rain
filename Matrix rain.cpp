@@ -12,73 +12,49 @@
 #include <mutex>
 #include <io.h>
 
+
+#define TAIL_LENGTH 20
+#define DELAY 1
+int tail = TAIL_LENGTH;
+
 using namespace std;
 
-#define BEGIN 12449
-#define END 12450
-#define TAIL_LENGTH 10
-#define DELAY 1
-
-mutex mtx;
-int finish = 0;
-int tail = TAIL_LENGTH+10;
-vector <bool> zauzete;
-
-SMALL_RECT GetConsoleSize();
-char RandomChar();
-void matrix(int brK, int brV);
-void matrixV2(int brK, int brV);
+bool GetConsoleSize(COORD& cord);
+void ChangeConsoleSize(SHORT width, SHORT height);
 void ChangeFgBg(int fg, int bg);
 void gotoxy(int x, int y);
 void SetUpConsole();
-void ChangeConsoleSize(SHORT width, SHORT height);
-int GetColumn(int brK);
 
-int main()
-{
-	int brK, brV;
+char RandomChar();
+void matrix(int brK, int brV);
 
+int main(){
 	srand((unsigned int)time(0));
+
+	int brK, brV;
+	COORD cSize;
 	SetUpConsole();
-	ChangeFgBg(1, 0);
 
-	brK = 150;
-	brV = 50;
+	if (!GetConsoleSize(cSize))
+		return 1;
+	brK = cSize.X;
+	brV = cSize.Y;
 
-	ChangeConsoleSize(brK, brV);
-	matrixV2(brK, brV);
+	matrix(brK, brV);
 
-	return 1;
+	return 0;
 }
 
-SMALL_RECT GetConsoleSize()
+bool GetConsoleSize(COORD& cord)
 {
-	CONSOLE_SCREEN_BUFFER_INFOEX info;
-	info.cbSize = sizeof(info);
-	GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-	return info.srWindow;
+	CONSOLE_SCREEN_BUFFER_INFO p;
+	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (GetConsoleScreenBufferInfo(console, &p)) {
+		cord = p.dwSize;
+		return true;
+	}
+	return false;
 }
-
-char RandomChar(){
-	char c;
-	if (rand() % 2 == 0) 
-		c = rand() % (26) + 65;
-	else
-		c = rand() % (26) + 97;
-	return c;
-}
-
-void ChangeFgBg(int fg, int bg) {
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (fg + (bg * 16)));
-}
-
-void gotoxy(int x, int y){
-	COORD cord;
-	cord.X = x;
-	cord.Y = y;
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cord);
-}
-
 void SetUpConsole(){
 	_setmode(_fileno(stdout), _O_TEXT);
 
@@ -122,8 +98,14 @@ void SetUpConsole(){
 	SetConsoleScreenBufferInfoEx(OUT_HANDLE, &info);
 	SetCurrentConsoleFontEx(OUT_HANDLE, true, &cfi);
 	SetConsoleCursorInfo(OUT_HANDLE, &cci);
+	ChangeFgBg(1, 0);
 }
-
+void gotoxy(int x, int y){
+	COORD cord;
+	cord.X = x;
+	cord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cord);
+}
 void ChangeConsoleSize(SHORT width, SHORT height){
 	CONSOLE_SCREEN_BUFFER_INFOEX cinfo;
 	HANDLE OUT_HANDLE;
@@ -138,63 +120,39 @@ void ChangeConsoleSize(SHORT width, SHORT height){
 	cinfo.srWindow.Bottom = height;
 	SetConsoleScreenBufferInfoEx(OUT_HANDLE, &cinfo);
 }
-
-void matrix(int brK, int brV){
-	while (1){
-		for (int i = 0; i < brV; i++){
-			mtx.lock();
-			gotoxy(brK, i);
-			cout << RandomChar();
-
-			if (i >= tail) {
-				gotoxy(brK, i - tail);
-				cout << L" ";
-			}
-			mtx.unlock();
-			Sleep(DELAY);
-		}
-
-		for (int i = 0; i < tail; i++){
-			mtx.lock();
-			gotoxy(brK, i + brV - tail);
-			cout << L" ";
-			mtx.unlock();
-			Sleep(DELAY);
-		}
-	}
+void ChangeFgBg(int fg, int bg) {
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (fg + (bg * 16)));
 }
 
-void matrixV2(int brK, int brV){
+char RandomChar(){
+	char c;
+	if (rand() % 2 == 0) 
+		c = rand() % (26) + 65;
+	else
+		c = rand() % (26) + 97;
+	return c;
+}
+void matrix(int brK, int brV){
 	int j = 0;
-	vector<int> kolone;
+	vector<int> vrste;
 
 	for (int i = 0; i < brK; i++)
-		kolone.push_back(rand() % brV - 10);
+		vrste.push_back(rand() % brV - 10);
 
 	while (1){
 		Sleep(DELAY);
 		for (int k = 0; k < brK; k++){
-			gotoxy(k, kolone[k] % brV);
+			gotoxy(k, vrste[k] % brV);
 			cout << RandomChar();
-			if (kolone[k] % brV < tail){
-				gotoxy(k, brV - tail + kolone[k] % brV);
+			if (vrste[k] % brV < tail){
+				gotoxy(k, brV - tail + vrste[k] % brV);
 				cout << " ";
 			}
 			else{
-				gotoxy(k, kolone[k] % brV - tail);
+				gotoxy(k, vrste[k] % brV - tail);
 				cout << " ";
 			}
-			kolone[k]++;
+			vrste[k]++;
 		}
 	}
 }
-
-int GetColumn(int brK){
-	int i = rand() % brK;
-	if (zauzete[i]){
-		zauzete[i] = false;
-		return i;
-	}
-	return -1;
-}
-
